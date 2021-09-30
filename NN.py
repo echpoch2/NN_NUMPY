@@ -26,7 +26,7 @@ class NeuralNetwork:
         self.batch = batch
         self.epochs = epochs
         self.lr = lr
-        
+        self.sv_coef =.75
         self.x = self.input[:self.batch] # batch input 
         self.y = self.target[:self.batch] # batch target value
         self.loss = []
@@ -42,8 +42,14 @@ class NeuralNetwork:
         self.W2 = np.random.randn(self.input.shape[1],128)
         self.W3 = np.random.randn(self.W2.shape[1],self.y.shape[1])
 
+        self.W2_hist = np.zeros(self.W2.shape)
+        self.W3_hist = np.zeros(self.W3.shape)
+
         self.b2 = np.random.randn(self.W2.shape[1],)
         self.b3 = np.random.randn(self.W3.shape[1],)
+
+        self.b2_hist = np.random.randn(self.W2.shape[1],)
+        self.b3_hist = np.random.randn(self.W3.shape[1],)
 
     def ReLU(self, x):
         return np.maximum(0,x)
@@ -88,30 +94,38 @@ class NeuralNetwork:
 
         
     def backprop(self):
+        self.W3 = self.W3 - self.sv_coef * self.W3_hist
+        self.W2 = self.W2 - self.sv_coef * self.W2_hist
+        self.b3 = self.b3 - self.sv_coef * self.b3_hist
+        self.b2 = self.b2 - self.sv_coef * self.b2_hist
+
+
         dcost = (1/self.batch)*(self.a3 - self.y)
         DW3 = np.dot(dcost.T,self.a2).T
         DW2 = np.dot((np.dot((dcost),self.W3.T) * self.dReLU(self.z2)).T,self.x).T
-        #DW1 = np.dot((np.dot(np.dot((dcost),self.W3.T)*self.dReLU(self.z2),self.W2.T)*self.dReLU(self.z1)).T,self.x).T
+
 
         db3 = np.sum(dcost,axis = 0)
         db2 = np.sum(np.dot((dcost),self.W3.T) * self.dReLU(self.z2),axis = 0)
-        #db1 = np.sum((np.dot(np.dot((dcost),self.W3.T)*self.dReLU(self.z2),self.W2.T)*self.dReLU(self.z1)),axis = 0)
-        
+
         assert DW3.shape == self.W3.shape
         assert DW2.shape == self.W2.shape
-        #assert DW1.shape == self.W1.shape
+
         
         assert db3.shape == self.b3.shape
         assert db2.shape == self.b2.shape
-        #assert db1.shape == self.b1.shape 
+
         
-        self.W3 = self.W3 - self.lr * DW3
-        self.W2 = self.W2 - self.lr * DW2
-        #self.W1 = self.W1 - self.lr * DW1
-        
-        self.b3 = self.b3 - self.lr * db3
-        self.b2 = self.b2 - self.lr * db2
-        #self.b1 = self.b1 - self.lr * db1
+        self.W3_hist = self.W3_hist * self.sv_coef + self.lr*DW3
+        self.W2_hist = self.W2_hist * self.sv_coef + self.lr*DW2
+        self.b3_hist = self.b3_hist * self.sv_coef + self.lr*db3
+        self.b2_hist = self.b2_hist * self.sv_coef + self.lr*db2
+
+        self.W3 = self.W3 - self.W3_hist
+        self.W2 = self.W2 - self.W2_hist
+        self.b3 = self.b3 - self.b3_hist
+        self.b2 = self.b2 - self.b2_hist
+
 
     def train(self):
         for epoch in range(self.epochs):
@@ -138,7 +152,6 @@ class NeuralNetwork:
         plt.plot(self.loss)
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
-        plt.show()
     
     def acc_plot(self):
         plt.figure(dpi = 125)
