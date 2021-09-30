@@ -48,8 +48,8 @@ class NeuralNetwork:
         self.b2 = np.random.randn(self.W2.shape[1],)
         self.b3 = np.random.randn(self.W3.shape[1],)
 
-        self.b2_hist = np.random.randn(self.W2.shape[1],)
-        self.b3_hist = np.random.randn(self.W3.shape[1],)
+        self.b2_hist = np.zeros(self.W2.shape[1],)
+        self.b3_hist = np.zeros(self.W3.shape[1],)
 
     def ReLU(self, x):
         return np.maximum(0,x)
